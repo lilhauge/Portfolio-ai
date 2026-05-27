@@ -2,11 +2,6 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 
-// ── Anthropic API key ──────────────────────────────────────────────────────────
-// In standalone PWA: set VITE_ANTHROPIC_KEY in Vercel environment variables
-// In Claude artifact: key is injected automatically, this line is a no-op
-window.__ANTHROPIC_KEY__ = import.meta.env.VITE_ANTHROPIC_KEY || null;
-
 // ── Storage polyfill ───────────────────────────────────────────────────────────
 // Maps Claude's window.storage API → localStorage so data persists on device
 window.storage = {
@@ -27,6 +22,9 @@ window.storage = {
     return { keys };
   }
 };
+
+// Note: API key is now handled server-side in /api/claude.js
+// No client-side key needed — set ANTHROPIC_API_KEY in Vercel Environment Variables
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

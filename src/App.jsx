@@ -1,20 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 
-// API headers — works in Claude artifact (auto-injected key) AND standalone PWA (env key)
+// API endpoint:
+// - In Claude artifact: call Anthropic directly (key auto-injected)
+// - In standalone PWA on Vercel: call /api/claude proxy (key stays server-side)
+function apiUrl() {
+  // If running in Claude artifact environment, call directly
+  if (typeof window !== "undefined" && window.__ANTHROPIC_KEY__) {
+    return "https://api.anthropic.com/v1/messages";
+  }
+  // Otherwise use Vercel proxy
+  return "/api/claude";
+}
 function apiHeaders() {
-  const key = typeof window !== "undefined" && window.__ANTHROPIC_KEY__;
   const h = { "Content-Type": "application/json" };
+  const key = typeof window !== "undefined" && window.__ANTHROPIC_KEY__;
   if (key) {
     h["x-api-key"] = key;
     h["anthropic-version"] = "2023-06-01";
     h["anthropic-dangerous-direct-browser-access"] = "true";
-  }
-  // Log headers in dev for debugging (key is masked)
-  if (typeof window !== "undefined" && window.__ANTHROPIC_KEY__) {
-    const keyPreview = window.__ANTHROPIC_KEY__.slice(0,12) + "...";
-    console.log("[PortfolioAI] API call with key:", keyPreview);
-  } else {
-    console.warn("[PortfolioAI] No API key found — set VITE_ANTHROPIC_KEY in Vercel env vars");
   }
   return h;
 }
@@ -136,13 +139,9 @@ async function claudeFetch(positions,onLog){
   const list=tr.map(p=>p.name+" | ISIN:"+p.isin+" | currency:"+p.currency).join("\n");
   const sys="You are a financial data tool. Search for current market prices. Respond with ONLY a raw JSON array, nothing else. Format: [{\"isin\":\"...\",\"price\":12.34,\"currency\":\"EUR\",\"chgPct\":0.5}]. Omit instruments not found.";
   const msgs=[{role:"user",content:"Find today's prices for:\n"+list+"\n\nReturn ONLY the JSON array."}];
-  // Check key before starting
-  if (typeof window !== "undefined" && !window.__ANTHROPIC_KEY__) {
-    throw new Error("Mangler API-nøgle. Tjek at VITE_ANTHROPIC_KEY er sat i Vercel Environment Variables og at du har redeployet.");
-  }
   for(let i=0;i<12;i++){
     onLog("Søger kurser… (tur "+(i+1)+")");
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{
+    const resp=await fetch(apiUrl(),{
       method:"POST",headers:apiHeaders(),
       body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:4000,system:sys,tools:[{type:"web_search_20250305",name:"web_search"}],messages:msgs}),
     });
@@ -347,7 +346,7 @@ export default function App(){
       }).join("\n");
       const tLines=themes.map(t=>"- "+t.theme+": "+f2(t.act)+"% (mål "+t.tg+"%, drift "+fP(t.drift)+") = "+fK(t.val)).join("\n");
       const prompt="Du er en erfaren dansk porteføljerådgiver. Analyser denne ETF-portefølje og giv konkrete anbefalinger på dansk.\n\nPORTEFØLJE — total: "+fK(total)+"\n\nPositioner:\n"+posLines+"\n\nTema-balance (rebalanceringsgrænse ±"+thr+"%):\n"+tLines+"\n\nMålvægte summerer til: "+f2(tPct,0)+"%\n\nGiv en struktureret analyse:\n1. Overordnet vurdering (3-4 sætninger)\n2. Rebalancering — hvad skal købes/sælges og for hvilke beløb i DKK\n3. Afkast og snitkurser — kommentar til store gevinster/tab\n4. Top 3 anbefalinger\n5. Risici\n\nVær konkret. Nævn instrumentnavne og beløb i DKK.";
-      const r=await fetch("https://api.anthropic.com/v1/messages",{
+      const r=await fetch(apiUrl(),{
         method:"POST",
         headers:apiHeaders(),
         body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2000,messages:[{role:"user",content:prompt}]}),

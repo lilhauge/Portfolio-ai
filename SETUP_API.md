@@ -1,48 +1,23 @@
 # Opsætning af Anthropic API-nøgle
 
+API-nøglen håndteres nu server-side via en Vercel proxy.
+Du behøver IKKE sætte nøglen i frontend-koden.
+
 ## Trin 1: Få en API-nøgle
 1. Gå til console.anthropic.com
-2. Opret en konto (gratis at oprette)
-3. Gå til "API Keys" → "Create Key"
-4. Kopiér nøglen (starter med `sk-ant-...`)
+2. Gå til "API Keys" → "Create Key"
+3. Kopiér nøglen (starter med `sk-ant-...`)
 
-## Trin 2: Tilføj nøglen til projektet
+## Trin 2: Tilføj nøglen i Vercel (KUN her — ikke i koden)
+1. Vercel dashboard → dit projekt → Settings → Environment Variables
+2. Tilføj:
+   - Name:  ANTHROPIC_API_KEY
+   - Value: din nøgle
+3. Klik Save
+4. Gå til Deployments → Redeploy
 
-Opret filen `.env` i rod-mappen:
-```
-VITE_ANTHROPIC_KEY=sk-ant-din-nøgle-her
-```
+Det er alt. Nøglen forbliver server-side og eksponeres aldrig i browseren.
 
-Rediger `src/main.jsx` — tilføj denne linje øverst i storage-polyfill-blokken:
-```js
-// API key til Anthropic (kurshentning + AI analyse)
-window.__ANTHROPIC_KEY__ = import.meta.env.VITE_ANTHROPIC_KEY
-```
-
-Rediger `src/App.jsx` — find de to steder hvor der kaldes:
-```js
-fetch("https://api.anthropic.com/v1/messages", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-```
-og tilføj `"x-api-key": window.__ANTHROPIC_KEY__` til headers-objektet:
-```js
-headers: {
-  "Content-Type": "application/json",
-  "x-api-key": window.__ANTHROPIC_KEY__,
-  "anthropic-version": "2023-06-01",
-  "anthropic-dangerous-direct-browser-access": "true",
-}
-```
-
-## Trin 3: Tilføj til Vercel
-I Vercel dashboard → dit projekt → Settings → Environment Variables:
-- Key: `VITE_ANTHROPIC_KEY`
-- Value: din API-nøgle
-
-Redeploy projektet.
-
-## Pris
-Kurshentning: ~$0.01–0.03 per opdatering (web search koster lidt)
-AI-analyse: ~$0.01–0.02 per analyse
-Samlet: formentlig under $1/måned ved normal brug
+## Hvordan det virker
+Appen kalder /api/claude (din Vercel-server) i stedet for Anthropic direkte.
+Vercel-serveren tilføjer API-nøglen og videresender til Anthropic.
