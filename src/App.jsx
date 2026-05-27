@@ -9,6 +9,13 @@ function apiHeaders() {
     h["anthropic-version"] = "2023-06-01";
     h["anthropic-dangerous-direct-browser-access"] = "true";
   }
+  // Log headers in dev for debugging (key is masked)
+  if (typeof window !== "undefined" && window.__ANTHROPIC_KEY__) {
+    const keyPreview = window.__ANTHROPIC_KEY__.slice(0,12) + "...";
+    console.log("[PortfolioAI] API call with key:", keyPreview);
+  } else {
+    console.warn("[PortfolioAI] No API key found — set VITE_ANTHROPIC_KEY in Vercel env vars");
+  }
   return h;
 }
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
@@ -129,6 +136,10 @@ async function claudeFetch(positions,onLog){
   const list=tr.map(p=>p.name+" | ISIN:"+p.isin+" | currency:"+p.currency).join("\n");
   const sys="You are a financial data tool. Search for current market prices. Respond with ONLY a raw JSON array, nothing else. Format: [{\"isin\":\"...\",\"price\":12.34,\"currency\":\"EUR\",\"chgPct\":0.5}]. Omit instruments not found.";
   const msgs=[{role:"user",content:"Find today's prices for:\n"+list+"\n\nReturn ONLY the JSON array."}];
+  // Check key before starting
+  if (typeof window !== "undefined" && !window.__ANTHROPIC_KEY__) {
+    throw new Error("Mangler API-nøgle. Tjek at VITE_ANTHROPIC_KEY er sat i Vercel Environment Variables og at du har redeployet.");
+  }
   for(let i=0;i<12;i++){
     onLog("Søger kurser… (tur "+(i+1)+")");
     const resp=await fetch("https://api.anthropic.com/v1/messages",{
@@ -365,7 +376,7 @@ export default function App(){
     return(
     <div style={{display:"flex",alignItems:"center",gap:6}}>
       <div style={{width:5,height:5,borderRadius:"50%",flexShrink:0,background:fetching?T.accent:priceErr?T.red:priceTs&&Date.now()-priceTs<TTL?T.green:T.gold,animation:fetching?"pulse 1s infinite":"none"}}/>
-      <span style={{fontSize:10,color:T.muted,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{fetching?priceLog||"Henter…":priceErr?"Fejl":priceTs?"Kurser: "+tLbl(priceTs):""}{fxStr&&!fetching?" · "+fxStr:""}</span>
+      <span style={{fontSize:10,color:T.muted,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{fetching?priceLog||"Henter…":priceErr?"⚠ "+priceErr.slice(0,80):priceTs?"Kurser: "+tLbl(priceTs):""}{fxStr&&!fetching?" · "+fxStr:""}</span>
       {!fetching&&<button onClick={()=>fetchPrices(true)} style={{background:T.accent+"15",color:T.accent,border:"1px solid "+T.accent+"30",borderRadius:5,padding:"2px 7px",fontSize:9,cursor:"pointer",fontWeight:600,flexShrink:0}}>↻</button>}
     </div>
   );}
