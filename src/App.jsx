@@ -144,7 +144,7 @@ async function claudeFetch(positions,onLog){
     onLog("Søger kurser… (tur "+(i+1)+")");
     const resp=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",headers:apiHeaders(),
-      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:4000,system:sys,tools:[{type:"web_search_20250305",name:"web_search"}],messages:msgs}),
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4000,system:sys,tools:[{type:"web_search_20250305",name:"web_search"}],messages:msgs}),
     });
     if(!resp.ok){const t=await resp.text();throw new Error("API "+resp.status+": "+t.slice(0,300));}
     const data=await resp.json();
@@ -350,7 +350,7 @@ export default function App(){
       const r=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
         headers:apiHeaders(),
-        body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:2000,messages:[{role:"user",content:prompt}]}),
+        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2000,messages:[{role:"user",content:prompt}]}),
       });
       if(!r.ok){const errTxt=await r.text();throw new Error("API "+r.status+": "+errTxt.slice(0,300));}
       const d=await r.json();
