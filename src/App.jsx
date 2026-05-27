@@ -1,4 +1,16 @@
 import { useState, useEffect, useRef } from "react";
+
+// API headers — works in Claude artifact (auto-injected key) AND standalone PWA (env key)
+function apiHeaders() {
+  const key = typeof window !== "undefined" && window.__ANTHROPIC_KEY__;
+  const h = { "Content-Type": "application/json" };
+  if (key) {
+    h["x-api-key"] = key;
+    h["anthropic-version"] = "2023-06-01";
+    h["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+  return h;
+}
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
 
 // ─── Tokens ────────────────────────────────────────────────────────────────────
@@ -120,7 +132,7 @@ async function claudeFetch(positions,onLog){
   for(let i=0;i<12;i++){
     onLog("Søger kurser… (tur "+(i+1)+")");
     const resp=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",headers:{"Content-Type":"application/json"},
+      method:"POST",headers:apiHeaders(),
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:sys,tools:[{type:"web_search_20250305",name:"web_search"}],messages:msgs}),
     });
     if(!resp.ok){const t=await resp.text();throw new Error("API "+resp.status+": "+t.slice(0,300));}
@@ -326,7 +338,7 @@ export default function App(){
       const prompt="Du er en erfaren dansk porteføljerådgiver. Analyser denne ETF-portefølje og giv konkrete anbefalinger på dansk.\n\nPORTEFØLJE — total: "+fK(total)+"\n\nPositioner:\n"+posLines+"\n\nTema-balance (rebalanceringsgrænse ±"+thr+"%):\n"+tLines+"\n\nMålvægte summerer til: "+f2(tPct,0)+"%\n\nGiv en struktureret analyse:\n1. Overordnet vurdering (3-4 sætninger)\n2. Rebalancering — hvad skal købes/sælges og for hvilke beløb i DKK\n3. Afkast og snitkurser — kommentar til store gevinster/tab\n4. Top 3 anbefalinger\n5. Risici\n\nVær konkret. Nævn instrumentnavne og beløb i DKK.";
       const r=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        headers:apiHeaders(),
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2000,messages:[{role:"user",content:prompt}]}),
       });
       if(!r.ok){const errTxt=await r.text();throw new Error("API "+r.status+": "+errTxt.slice(0,300));}
