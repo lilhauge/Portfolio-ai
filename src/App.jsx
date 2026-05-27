@@ -132,35 +132,48 @@ async function getFx(){
   }catch{return FX0;}
 }
 
-// ─── Claude price fetch (agentic loop) ────────────────────────────────────────
-async function claudeFetch(positions,onLog){
-  const tr=positions.filter(p=>p.symbol&&p.isin);
-  if(!tr.length)return[];
-  const list=tr.map(p=>p.name+" | ISIN:"+p.isin+" | currency:"+p.currency).join("\n");
-  const sys="You are a financial data tool. Search for current market prices. Respond with ONLY a raw JSON array, nothing else. Format: [{\"isin\":\"...\",\"price\":12.34,\"currency\":\"EUR\",\"chgPct\":0.5}]. Omit instruments not found.";
-  const msgs=[{role:"user",content:"Find today's prices for:\n"+list+"\n\nReturn ONLY the JSON array."}];
-  for(let i=0;i<12;i++){
-    onLog("Søger kurser… (tur "+(i+1)+")");
-    const resp=await fetch(apiUrl(),{
-      method:"POST",headers:apiHeaders(),
-      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:4000,system:sys,tools:[{type:"web_search_20250305",name:"web_search"}],messages:msgs}),
-    });
-    if(!resp.ok){const t=await resp.text();throw new Error("API "+resp.status+": "+t.slice(0,300));}
-    const data=await resp.json();
-    msgs.push({role:"assistant",content:data.content});
-    if(data.stop_reason==="end_turn"){
-      const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
-      if(!text.trim())throw new Error("Tomt svar");
-      const si=text.indexOf("["),ei=text.lastIndexOf("]");
-      if(si===-1||ei===-1)throw new Error("Ingen JSON. Fik: "+text.slice(0,200));
-      return JSON.parse(text.slice(si,ei+1));
-    }
-    if(data.stop_reason==="tool_use")continue;
-    throw new Error("Uventet stop_reason: "+data.stop_reason);
-  }
-  throw new Error("Max ture nået");
-}
+// ─── Yahoo Finance price fetch (via Vercel proxy — free, no rate limits) ────────
+async function fetchYahooPrices(positions, onLog) {
+  const tradeable = positions.filter(p => p.isin && p.isin.trim());
+  if (!tradeable.length) return [];
+  const isins = [...new Set(tradeable.map(p => p.isin))];
+  const isArtifact = typeof window !== "undefined" && window.__ANTHROPIC_KEY__;
 
+  if (isArtifact) {
+    // Claude artifact: use one Claude call without web_search (no rate-limit loop)
+    onLog("Henter estimerede kurser via AI…");
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST", headers: apiHeaders(),
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1000,
+        messages: [{ role: "user", content:
+          "Return a JSON array with recent prices for these ETF ISINs based on your training data. " +
+          "Format: [{\"isin\":\"...\",\"price\":12.34,\"currency\":\"EUR\",\"chgPct\":null}]\n\n" +
+          "ISINs: " + isins.join(", ") + "\n\nReturn ONLY the JSON array, no explanation."
+        }]
+      })
+    });
+    if (!resp.ok) { const t = await resp.text(); throw new Error("API " + resp.status + ": " + t.slice(0,200)); }
+    const d = await resp.json();
+    const text = (d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+    const si = text.indexOf("["), ei = text.lastIndexOf("]");
+    if (si === -1 || ei === -1) throw new Error("Ingen JSON i svar");
+    return JSON.parse(text.slice(si, ei+1));
+  }
+
+  // Vercel PWA: use Yahoo Finance proxy (free, real-time, no API key needed)
+  onLog("Henter live kurser fra Yahoo Finance…");
+  const resp = await fetch("/api/prices", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isins }),
+  });
+  if (!resp.ok) { const t = await resp.text(); throw new Error("Kurs-proxy " + resp.status + ": " + t.slice(0,200)); }
+  const data = await resp.json();
+  if (data.errors?.length) console.warn("[PortfolioAI] Kursfejl:", data.errors);
+  return data.prices || [];
+}
 // ─── useWindowWidth ────────────────────────────────────────────────────────────
 function useWindowWidth(){
   const[w,setW]=useState(window.innerWidth);
@@ -269,7 +282,7 @@ export default function App(){
       setFx(fxLive);
       ss("pf-fx-v8",fxLive);
       const current=(await sg(SK.pos))||INIT_POS;
-      const data=await claudeFetch(current,setPriceLog);
+      const data=await fetchYahooPrices(current,setPriceLog);
       const map={};for(const d of data)if(d.isin&&d.price)map[d.isin]=d;
       setPos(prev=>prev.map(p=>{
         if(!p.isin)return p;const e=map[p.isin];if(!e)return p;
