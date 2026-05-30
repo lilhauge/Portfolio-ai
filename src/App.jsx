@@ -121,13 +121,14 @@ async function sg(k){try{const r=await window.storage.get(k);return r?JSON.parse
 async function ss(k,v){try{await window.storage.set(k,JSON.stringify(v));}catch{}}
 
 // ─── FX ───────────────────────────────────────────────────────────────────────
-const FX0={USD:6.85,EUR:7.46,DKK:1,GBP:8.70};
+const FX0={USD:6.85,EUR:7.46,DKK:1,GBP:8.70,GBp:0.0870}; // GBp=pence=GBP/100
 async function getFx(){
   try{
     const r=await fetch("https://api.frankfurter.app/latest?from=DKK&to=USD,EUR,GBP");
     if(!r.ok)return FX0;
     const d=await r.json(), out={DKK:1};
     for(const[c,v]of Object.entries(d.rates||{}))out[c]=1/v;
+    out.GBp=(out.GBP??8.70)/100;
     return{...FX0,...out};
   }catch{return FX0;}
 }
@@ -172,7 +173,10 @@ async function fetchYahooPrices(positions, onLog) {
   if (!resp.ok) { const t = await resp.text(); throw new Error("Kurs-proxy " + resp.status + ": " + t.slice(0,200)); }
   const data = await resp.json();
   if (data.errors?.length) console.warn("[PortfolioAI] Kursfejl:", data.errors);
-  return data.prices || [];
+  // Normalize GBp (pence) → GBP in case proxy didn't catch it
+  return (data.prices || []).map(p =>
+    p.currency === "GBp" ? {...p, price: p.price/100, currency: "GBP"} : p
+  );
 }
 // ─── useWindowWidth ────────────────────────────────────────────────────────────
 function useWindowWidth(){
@@ -362,7 +366,7 @@ export default function App(){
       const r=await fetch(apiUrl(),{
         method:"POST",
         headers:apiHeaders(),
-        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2000,messages:[{role:"user",content:prompt}]}),
+        body:JSON.stringify({model:"claude-haiku-4-5",max_tokens:2000,messages:[{role:"user",content:prompt}]}),
       });
       if(!r.ok){const errTxt=await r.text();throw new Error("API "+r.status+": "+errTxt.slice(0,300));}
       const d=await r.json();
