@@ -94,6 +94,17 @@ function avgCostDKK(p, fx) {
   if (!tot) return null;
   return lots.reduce((s,l)=>s+lotValueDKK(l,fx),0)/tot;
 }
+function avgCostLocal(p) {
+  const lots = p.lots || [], tot = lots.reduce((s,l)=>s+l.shares,0);
+  if (!tot) return null;
+  return lots.reduce((s,l)=>s+(l.priceLocal??l.priceDKK??0)*l.shares,0)/tot;
+}
+function fLocal(p) {
+  const avg = avgCostLocal(p);
+  if (!avg) return "–";
+  const ccy = p.lots?.[0]?.currency || p.currency || "DKK";
+  return f2(avg)+" "+ccy;
+}
 function posValue(p, fx) {
   if (p.price) return Math.round(p.price*p.shares);  // live price already in DKK
   return (p.lots||[]).reduce((s,l)=>s+lotValueDKK(l,fx),0);
@@ -544,7 +555,7 @@ export default function App(){
                           <div key={p.id} style={{borderTop:"1px solid "+T.border,padding:"9px 14px 9px 25px"}}>
                             <div style={{fontWeight:500,fontSize:12,marginBottom:4}}>{p.name}</div>
                             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}}>
-                              <StatCell label="Snitkurs" value={avg?fK(avg):"–"}/>
+                              <StatCell label="Snitkurs" value={fLocal(p)}/>
                               <StatCell label="Markedsværdi" value={fK(v)}/>
                               <StatCell label="Andel tema" value={f2(pctT)+"%"}/>
                               <StatCell label="Dag Δ" value={p.chg!=null?fP(p.chg):"–"} color={p.chg!=null?(p.chg>=0?T.green:T.red):T.dim}/>
@@ -587,7 +598,7 @@ export default function App(){
                     {/* Row 2: 4 data cells — identical grid across all cards */}
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,paddingLeft:15}}>
                       <StatCell label="Antal" value={p.shares+" stk"}/>
-                      <StatCell label="Snitkurs" value={avg?fK(avg):"–"}/>
+                      <StatCell label="Snitkurs" value={fLocal(p)}/>
                       <StatCell label="Live kurs" value={p.price?fK(p.price):"–"} sub={p.chg!=null?fP(p.chg):undefined} color={p.chg!=null?(p.chg>=0?T.green:T.red):undefined}/>
                       <StatCell label="Markedsværdi" value={fK(v)} sub={retPct!=null?fP(retPct):undefined} color={retPct!=null?(retPct>=0?T.green:T.red):undefined}/>
                     </div>
@@ -598,7 +609,7 @@ export default function App(){
                     <div style={{borderTop:"1px solid "+T.border}}>
                       {/* Lots header */}
                       <div style={{display:"grid",gridTemplateColumns:"1fr 60px 100px 90px",gap:8,padding:"5px 14px",background:T.bg}}>
-                        {["Dato","Antal","Kurs (DKK)","Beløb"].map(h=>(
+                        {["Dato","Antal","Kurs","Beløb (DKK)"].map(h=>(
                           <div key={h} style={{fontSize:9,color:T.muted,fontWeight:600,letterSpacing:.6,textTransform:"uppercase",textAlign:h==="Dato"?"left":"right"}}>{h}</div>
                         ))}
                       </div>
@@ -607,14 +618,14 @@ export default function App(){
                           style={{display:"grid",gridTemplateColumns:"1fr 60px 100px 90px",gap:8,padding:"7px 14px",borderTop:"1px solid "+T.border,alignItems:"center",cursor:"pointer"}}>
                           <div style={{fontSize:11,color:T.muted,fontFamily:"'IBM Plex Mono',monospace"}}>{lot.date}</div>
                           <div style={{fontSize:11,fontFamily:"'IBM Plex Mono',monospace",textAlign:"right"}}>{lot.shares}</div>
-                          <div style={{fontSize:11,fontFamily:"'IBM Plex Mono',monospace",textAlign:"right"}}>{fK(lot.priceDKK)}</div>
+                          <div style={{fontSize:11,fontFamily:"'IBM Plex Mono',monospace",textAlign:"right"}}>{f2(lot.priceLocal??lot.priceDKK??0)+" "+(lot.currency||p.currency||"DKK")}</div>
                           <div style={{fontSize:11,fontFamily:"'IBM Plex Mono',monospace",textAlign:"right",fontWeight:600}}>{fK(lot.priceDKK*lot.shares)}</div>
                         </div>
                       ))}
                       <div style={{display:"grid",gridTemplateColumns:"1fr 60px 100px 90px",gap:8,padding:"7px 14px",borderTop:"1px solid "+T.hi,background:tc+"08"}}>
                         <div style={{fontSize:11,fontWeight:700,color:T.muted}}>Total / Snitkurs</div>
                         <div style={{fontSize:11,fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,textAlign:"right"}}>{p.shares}</div>
-                        <div style={{fontSize:11,fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,textAlign:"right",color:tc}}>{avg?fK(avg):"–"}</div>
+                        <div style={{fontSize:11,fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,textAlign:"right",color:tc}}>{fLocal(p)}</div>
                         <div style={{fontSize:11,fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,textAlign:"right"}}>{fK(v)}</div>
                       </div>
                     </div>
