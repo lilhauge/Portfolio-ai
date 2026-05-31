@@ -64,7 +64,7 @@ const INIT_POS = [
   { id:12, name:"VanEck Uranium & Nuclear Technologies ETF",  account:"Carina ASK",  theme:"Energisikkerhed",                        symbol:"NUKL",   isin:"IE000M7V94E1", currency:"EUR", shares:111, price:null, chg:null, lots:[{id:112,date:"2024-01-01",shares:111, priceLocal:45.18,  currency:"EUR", priceDKK:337.04}] },
   { id:13, name:"iShares Core MSCI World ETF",                account:"Carina ASK",  theme:"Global kerne",                           symbol:"IWDA",   isin:"IE00B4L5Y983", currency:"EUR", shares:45,  price:null, chg:null, lots:[{id:113,date:"2024-01-01",shares:45,  priceLocal:111.49, currency:"EUR", priceDKK:831.72}] },
   { id:14, name:"Future of Defence UCITS ETF",                account:"Carina ASK",  theme:"Forsvar & geopolitisk sikkerhed",        symbol:"ASWC",   isin:"IE000OJ5TQP4", currency:"EUR", shares:179, price:null, chg:null, lots:[{id:114,date:"2026-05-08",shares:179, priceLocal:16.49,  currency:"EUR", priceDKK:123.02}] },
-  { id:15, name:"iShares Global Clean Energy Transition ETF", account:"Carina ASK",  theme:"Energisikkerhed",                        symbol:"INRG",   isin:"IE00B1XNHC34", currency:"USD", shares:313, price:null, chg:null, lots:[{id:115,date:"2026-05-06",shares:313, priceLocal:12.30,  currency:"USD", priceDKK:84.25}] },
+  { id:15, name:"iShares Global Clean Energy Transition ETF", account:"Carina ASK",  theme:"Energisikkerhed",                        symbol:"INRG",   isin:"IE00B1XNHC34", currency:"GBP", shares:313, price:null, chg:null, lots:[{id:115,date:"2026-05-06",shares:313, priceLocal:9.91,   currency:"GBP", priceDKK:86.22}] },
 ];
 // Målvægte = midtpunkt af de angivne ranges
 // Rebalanceringsalarmen slår til ved ±afvigelse fra målet
