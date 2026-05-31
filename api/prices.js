@@ -9,20 +9,20 @@ export default async function handler(req, res) {
   // ISIN → Yahoo Finance ticker map (hardcoded for reliability)
   // Tested and verified against Yahoo Finance — all 15 return live prices
   const ISIN_TO_YAHOO = {
-    "JE00BN2CJ301": "WGLD.L",    // WisdomTree Core Physical Gold (USD on LSE)
-    "JE00B1VS3W29": "PHPM.L",    // WisdomTree Physical Precious Metals (USD on LSE)
-    "IE00BLPK3577": "WCBR.L",    // WisdomTree Cybersecurity ETF
-    "IE00BYMLZY74": "WCOA.L",    // WisdomTree Enhanced Commodity ETF
-    "GB00BJYDH287": "BTCW.L",    // WisdomTree Physical Bitcoin (was WBTC.L — fixed)
+    "JE00BN2CJ301": "WGLD.PA",    // WisdomTree Core Physical Gold (USD on LSE)
+    "JE00B1VS3W29": "PHPM.AS",    // WisdomTree Physical Precious Metals (USD on LSE)
+    "IE00BLPK3577": "WCBR.PA",    // WisdomTree Cybersecurity ETF
+    "IE00BYMLZY74": "WCOA.MI",    // WisdomTree Enhanced Commodity ETF
+    "GB00BJYDH287": "WBTC.PA",    // WisdomTree Physical Bitcoin (was WBTC.L — fixed)
     "IE0002PG6CA6": "REMX.PA",   // VanEck Rare Earth & Strategic Metals
     "IE00B4L5Y983": "IWDA.AS",   // iShares Core MSCI World
     "IE00B4L5Y983C": "IWDA.AS",  // iShares Core MSCI World (Carina ASK)
     "DK0062615662": "MAJAIS.CO", // Maj Invest AI Semicon
-    "IE00BP3QZB59": "IWVL.L",    // iShares MSCI World Value Factor (was IWVL.AS — fixed)
+    "IE00BP3QZB59": "IWVL.MI",    // iShares MSCI World Value Factor (was IWVL.AS — fixed)
     "IE00BYZK4552": "2B76.DE",   // iShares Automation & Robotics
     "IE000YYE6WK5": "DFEN.DE",   // VanEck Defense ETF
     "IE000M7V94E1": "NUKL.DE",   // VanEck Uranium & Nuclear Technologies
-    "IE000OJ5TQP4": "NATO.L",    // HANetf Future of Defence (was ASWC.L — fixed)
+    "IE000OJ5TQP4": "ASWC.DE",    // HANetf Future of Defence (was ASWC.L — fixed)
     "IE00B1XNHC34": "INRG.L",    // iShares Global Clean Energy (GBp on LSE)
   };
 

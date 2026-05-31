@@ -97,13 +97,23 @@ function avgCostDKK(p, fx) {
 function avgCostLocal(p) {
   const lots = p.lots || [], tot = lots.reduce((s,l)=>s+l.shares,0);
   if (!tot) return null;
-  return lots.reduce((s,l)=>s+(l.priceLocal??l.priceDKK??0)*l.shares,0)/tot;
+  // Use priceLocal if available; for legacy lots without it, show priceDKK in DKK
+  const hasLocal = lots.some(l => l.priceLocal != null);
+  if (hasLocal) {
+    const wtd = lots.reduce((s,l)=>s+(l.priceLocal??0)*l.shares,0);
+    return wtd / tot;
+  }
+  return null; // legacy — no local price available
 }
 function fLocal(p) {
   const avg = avgCostLocal(p);
-  if (!avg) return "–";
   const ccy = p.lots?.[0]?.currency || p.currency || "DKK";
-  return f2(avg)+" "+ccy;
+  if (avg != null) return f2(avg)+" "+ccy;
+  // Fallback: show DKK avg cost for legacy lots
+  const lots = p.lots || [], tot = lots.reduce((s,l)=>s+l.shares,0);
+  if (!tot) return "–";
+  const avgDKK = lots.reduce((s,l)=>s+(l.priceDKK??0)*l.shares,0)/tot;
+  return avgDKK ? fK(avgDKK) : "–";
 }
 function posValue(p, fx) {
   if (p.price) return Math.round(p.price*p.shares);  // live price already in DKK
@@ -127,7 +137,7 @@ const tLbl=ts=>ts?new Date(ts).toLocaleTimeString("da-DK",{hour:"2-digit",minute
 const TTL=2*60*60*1000;
 
 // ─── Storage ───────────────────────────────────────────────────────────────────
-const SK={pos:"pf-pos-v8",tgt:"pf-tgt-v8",thr:"pf-thr-v8",ts:"pf-ts-v8"};
+const SK={pos:"pf-pos-v9",tgt:"pf-tgt-v9",thr:"pf-thr-v9",ts:"pf-ts-v9"};
 async function sg(k){try{const r=await window.storage.get(k);return r?JSON.parse(r.value):null;}catch{return null;}}
 async function ss(k,v){try{await window.storage.set(k,JSON.stringify(v));}catch{}}
 
@@ -278,7 +288,7 @@ export default function App(){
 
   useEffect(()=>{
     (async()=>{
-      const[p,t,th,ts,fxSaved]=await Promise.all([sg(SK.pos),sg(SK.tgt),sg(SK.thr),sg(SK.ts),sg("pf-fx-v8")]);
+      const[p,t,th,ts,fxSaved]=await Promise.all([sg(SK.pos),sg(SK.tgt),sg(SK.thr),sg(SK.ts),sg("pf-fx-v9")]);
       if(p)setPos(p);if(t)setTgt(t);if(th)setThr(th);if(ts)setPriceTs(ts);if(fxSaved)setFx(fxSaved);
       setReady(true);
     })();
@@ -295,7 +305,7 @@ export default function App(){
     try{
       const fxLive=await getFx();
       setFx(fxLive);
-      ss("pf-fx-v8",fxLive);
+      ss("pf-fx-v9",fxLive);
       const current=(await sg(SK.pos))||INIT_POS;
       const data=await fetchYahooPrices(current,setPriceLog);
       const map={};for(const d of data)if(d.isin&&d.price)map[d.isin]=d;
