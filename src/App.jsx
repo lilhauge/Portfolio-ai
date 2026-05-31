@@ -137,7 +137,7 @@ const tLbl=ts=>ts?new Date(ts).toLocaleTimeString("da-DK",{hour:"2-digit",minute
 const TTL=2*60*60*1000;
 
 // ─── Storage ───────────────────────────────────────────────────────────────────
-const SK={pos:"pf-pos-v9",tgt:"pf-tgt-v9",thr:"pf-thr-v9",ts:"pf-ts-v9"};
+const SK={pos:"pf-pos-v10",tgt:"pf-tgt-v10",thr:"pf-thr-v10",ts:"pf-ts-v10"};
 async function sg(k){try{const r=await window.storage.get(k);return r?JSON.parse(r.value):null;}catch{return null;}}
 async function ss(k,v){try{await window.storage.set(k,JSON.stringify(v));}catch{}}
 
@@ -288,7 +288,7 @@ export default function App(){
 
   useEffect(()=>{
     (async()=>{
-      const[p,t,th,ts,fxSaved]=await Promise.all([sg(SK.pos),sg(SK.tgt),sg(SK.thr),sg(SK.ts),sg("pf-fx-v9")]);
+      const[p,t,th,ts,fxSaved]=await Promise.all([sg(SK.pos),sg(SK.tgt),sg(SK.thr),sg(SK.ts),sg("pf-fx-v10")]);
       if(p)setPos(p);if(t)setTgt(t);if(th)setThr(th);if(ts)setPriceTs(ts);if(fxSaved)setFx(fxSaved);
       setReady(true);
     })();
@@ -305,7 +305,7 @@ export default function App(){
     try{
       const fxLive=await getFx();
       setFx(fxLive);
-      ss("pf-fx-v9",fxLive);
+      ss("pf-fx-v10",fxLive);
       const current=(await sg(SK.pos))||INIT_POS;
       const data=await fetchYahooPrices(current,setPriceLog);
       const map={};for(const d of data)if(d.isin&&d.price)map[d.isin]=d;
