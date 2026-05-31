@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
 
 // API endpoint:
 // - In Claude artifact: call Anthropic directly (key auto-injected)
@@ -21,7 +22,6 @@ function apiHeaders() {
   }
   return h;
 }
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
 
 // ─── Tokens ────────────────────────────────────────────────────────────────────
 const T = {
